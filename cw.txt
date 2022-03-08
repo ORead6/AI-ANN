@@ -1,0 +1,11 @@
+import numpy as np
+
+I_dim = 0
+H_dim = 0
+
+weights = [0] * I_dim
+
+def sigmoid(x):
+    result = 1 / (1 + np.exp(x))
+    return result
+
