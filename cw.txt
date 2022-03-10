@@ -1,12 +1,66 @@
 import numpy as np
 
-I_dim = 0
-H_dim = 0
+#Change to get dataset in format as shown
+testData = np.matrix([[10.4,4.393,9.291,0,0,0,4], 
+            [9.95,4.239,8.622,0,0,0.8,0],
+            [9.46,4.124,8.057,0,0,0.8,0],
+            [9.41,4.363,7.925,2.4,24.8,0.8,61.6],
+            [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
+            [32.1,10.237,34.416,0,0,1.6,0.8]])
 
-weights = [0] * I_dim
+desiretOut = np.matrix([26.1, 24.86, 23.6, 23.47, 60.7, 98.01]).transpose()
 
-def sigmoid(x):
+
+#Neurons is how long the test Data array is
+I_dim = 7
+
+#5 Neurons
+H_dim = 5
+
+#3D Array for weights per layer
+weights = np.matrix([([0]*I_dim) for i in range(H_dim)])
+
+#Hidden Layer Bias
+hB = [1,2,3,4,5] #np.matrx([0] * H_dim)
+
+#Last layer of weights:
+hW = [0] * H_dim
+
+#Activation Function
+def activation(x):
+    #Sigmoid
     result = 1 / (1 + np.exp(x))
     return result
+
+#Error Function
+def costFunction(actualVal, predictedVal):
+    #Sum Square Error
+    SSE = 0
+    for i in range(len(actualVal)):
+        SSE += (actualVal[i] - predictedVal[i])**2
+
+    MSQE = SSE/len(actualVal)
+
+    return MSQE
+
+#Apply weights to each input value for each hidden layer and get their values
+#Loop through data set passing each data value into this
+def feedForward(input_layer):
+    for x in range(len(weights)):
+        #Weighted Sum
+        a = np.matmul(weights[x], input_layer.transpose())
+
+        #Add the biases
+        a = np.add(a, hB[x])
+
+        #Send value through activation for hidden node value
+        a = activation(a)
+
+        print(a)
+
+feedForward(testData[0])
+
+
+
 
 
