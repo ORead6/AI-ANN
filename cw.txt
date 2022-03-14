@@ -46,6 +46,7 @@ def costFunction(actualVal, predictedVal):
 #Apply weights to each input value for each hidden layer and get their values
 #Loop through data set passing each data value into this
 def feedForward(input_layer):
+
     for x in range(len(weights)):
         #Weighted Sum
         a = np.matmul(weights[x], input_layer.transpose())
@@ -54,9 +55,7 @@ def feedForward(input_layer):
         a = np.add(a, hB[x])
 
         #Send value through activation for hidden node value
-        a = activation(a)
-
-        print(a)
+        a = activation(a[0])
 
 feedForward(testData[0])
 
