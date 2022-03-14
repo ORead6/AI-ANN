@@ -8,8 +8,10 @@ testData = np.matrix([[10.4,4.393,9.291,0,0,0,4],
             [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
             [32.1,10.237,34.416,0,0,1.6,0.8]])
 
-desiretOut = np.matrix([26.1, 24.86, 23.6, 23.47, 60.7, 98.01]).transpose()
+desiredOut = np.matrix([26.1, 24.86, 23.6, 23.47, 60.7, 98.01]).transpose()
 
+#factor to shrink inputs by to avoid activation of 6 being nearly the same and as accurate as 600 (sigmoid graph)
+inputFactor = 0
 
 #Neurons is how long the test Data array is
 I_dim = 7
@@ -24,28 +26,48 @@ weights = np.matrix([([0]*I_dim) for i in range(H_dim)])
 hB = [1,2,3,4,5] #np.matrx([0] * H_dim)
 
 #Last layer of weights:
-hW = [0] * H_dim
+hW = np.matrix(([0] * H_dim)).transpose()
+
+#output Bias
+oB = 0
 
 #Activation Function
 def activation(x):
-    #Sigmoid
-    result = 1 / (1 + np.exp(x))
-    return result
+    active = "RELU"
+
+    if active == "sigmoid":
+        #Sigmoid
+        result = 1 / (1 + np.exp(x))
+        return result
+    
+    if active == "RELU":
+        #relu
+        if (x) >= 0:
+            return x
+        else:
+            return 0
 
 #Error Function
-def costFunction(actualVal, predictedVal):
-    #Sum Square Error
-    SSE = 0
-    for i in range(len(actualVal)):
-        SSE += (actualVal[i] - predictedVal[i])**2
+def costFunction(real, AI):
+    topSum = 0
+    bottomSum = 0
+    #Coefficient of efficiency
+    realMean = real.sum() / len(real)
+    for i in range(len(real)):
+        topSum += (AI[i] - real[i])**2
 
-    MSQE = SSE/len(actualVal)
+        bottomSum += (real[i] - realMean)**2
 
-    return MSQE
+    COE = 1 - (topSum / bottomSum)
+
+    return COE
+
 
 #Apply weights to each input value for each hidden layer and get their values
 #Loop through data set passing each data value into this
 def feedForward(input_layer):
+    global newA
+    newA = np.zeros(H_dim)
 
     for x in range(len(weights)):
         #Weighted Sum
@@ -57,7 +79,27 @@ def feedForward(input_layer):
         #Send value through activation for hidden node value
         a = activation(a[0])
 
-feedForward(testData[0])
+        newA[x] = a
+
+    outputNode = np.matmul(hW.transpose(), newA)
+
+    return (int(outputNode + oB))
+
+def main():
+    #Matrix to store values after each epoch
+    epochM = np.zeros(len(testData))
+
+    #Send each layer of test Data through feed forward algorithm
+    for x in range(0, len(testData)):
+        epochM[x] = activation(feedForward(testData[x]))
+
+    return costFunction(desiredOut, epochM)
+    
+print(main())
+
+
+
+
 
 
 
