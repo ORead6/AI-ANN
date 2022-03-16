@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 #Change to get dataset in format as shown
 testData = np.matrix([[10.4,4.393,9.291,0,0,0,4], 
@@ -8,7 +9,29 @@ testData = np.matrix([[10.4,4.393,9.291,0,0,0,4],
             [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
             [32.1,10.237,34.416,0,0,1.6,0.8]])
 
-desiredOut = np.matrix([26.1, 24.86, 23.6, 23.47, 60.7, 98.01]).transpose()
+desiredOut = [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
+#Changing between 1-0
+
+def normaliseData(data, case):
+#Assign realistic min and max values with the ranges of data
+    maxVal = 100 #Look through data set and change this value appropriately
+    minVal = 0
+
+    #Normalise data set between 0-1 for compairson
+    if (case == "pre"):
+        for x in range(0, len(data)):
+            data[x] = (data[x] - minVal) / (maxVal - minVal)
+
+        data = np.matrix(data).transpose()
+        return data
+    
+    #Taking data between 0-1 and changing to put through correct range of values
+    elif (case == "post"):
+        for x in range(0, len(data)):
+            data[x] = (data[x] * (maxVal - minVal)) + minVal
+        data = np.matrix(data).transpose()
+        return data
+
 
 #factor to shrink inputs by to avoid activation of 6 being nearly the same and as accurate as 600 (sigmoid graph)
 inputFactor = 0
@@ -20,20 +43,30 @@ I_dim = 7
 H_dim = 5
 
 #3D Array for weights per layer
-weights = np.matrix([([0]*I_dim) for i in range(H_dim)])
+weights = np.zeros(shape=(H_dim, len(testData)+1))
 
 #Hidden Layer Bias
-hB = [1,2,3,4,5] #np.matrx([0] * H_dim)
+hB = np.zeros(H_dim)
 
 #Last layer of weights:
-hW = np.matrix(([0] * H_dim)).transpose()
+hW = np.zeros(H_dim).transpose()
 
 #output Bias
 oB = 0
 
+def initWeights():
+    for x in range(0, len(weights)):
+        for i in range(0, len(weights[x])):
+            w = (random.uniform(I_dim, I_dim-1)) * np.sqrt((2/(I_dim-1)))
+            weights[x][i] = w
+
+    for i in range(0, len(hW)):
+        w = (random.uniform(I_dim, I_dim-1)) * np.sqrt((2/(I_dim-1)))
+        hW[i] = w
+
 #Activation Function
 def activation(x):
-    active = "RELU"
+    active = "sigmoid"
 
     if active == "sigmoid":
         #Sigmoid
@@ -45,22 +78,18 @@ def activation(x):
         if (x) >= 0:
             return x
         else:
-            return 0
+            return 0    
 
 #Error Function
 def costFunction(real, AI):
-    topSum = 0
-    bottomSum = 0
-    #Coefficient of efficiency
-    realMean = real.sum() / len(real)
-    for i in range(len(real)):
-        topSum += (AI[i] - real[i])**2
+    #SSE
+    SSE = 0
+    for i in range(0, len(real)):
+        SSE += (real[i] - AI[i])**2
 
-        bottomSum += (real[i] - realMean)**2
+    MSE = SSE * (1/(len(real)))
 
-    COE = 1 - (topSum / bottomSum)
-
-    return COE
+    return MSE
 
 
 #Apply weights to each input value for each hidden layer and get their values
@@ -93,9 +122,11 @@ def main():
     for x in range(0, len(testData)):
         epochM[x] = activation(feedForward(testData[x]))
 
-    return costFunction(desiredOut, epochM)
+    print(epochM)
+    return costFunction(normaliseData(desiredOut, "pre"), epochM)
     
 print(main())
+
 
 
 
