@@ -43,25 +43,28 @@ I_dim = 7
 H_dim = 5
 
 #3D Array for weights per layer
+global weights
 weights = np.zeros(shape=(H_dim, len(testData)+1))
 
 #Hidden Layer Bias
 hB = np.zeros(H_dim)
 
 #Last layer of weights:
+global hW
 hW = np.zeros(H_dim).transpose()
 
 #output Bias
 oB = 0
 
 def initWeights():
+    #Init weight values using Xavier weight Intialisation
     for x in range(0, len(weights)):
         for i in range(0, len(weights[x])):
-            w = (random.uniform(I_dim, I_dim-1)) * np.sqrt((2/(I_dim-1)))
+            w = random.uniform(-(1/np.sqrt(I_dim)), (1/np.sqrt(I_dim)))
             weights[x][i] = w
 
     for i in range(0, len(hW)):
-        w = (random.uniform(I_dim, I_dim-1)) * np.sqrt((2/(I_dim-1)))
+        w = random.uniform(-(1/np.sqrt(I_dim)), (1/np.sqrt(I_dim)))
         hW[i] = w
 
 #Activation Function
@@ -70,7 +73,7 @@ def activation(x):
 
     if active == "sigmoid":
         #Sigmoid
-        result = 1 / (1 + np.exp(x))
+        result = 1 / (1 + np.exp(-x))
         return result
     
     if active == "RELU":
@@ -85,7 +88,7 @@ def costFunction(real, AI):
     #SSE
     SSE = 0
     for i in range(0, len(real)):
-        SSE += (real[i] - AI[i])**2
+        SSE += (real[i] - AI[i])**  2
 
     MSE = SSE * (1/(len(real)))
 
@@ -112,18 +115,18 @@ def feedForward(input_layer):
 
     outputNode = np.matmul(hW.transpose(), newA)
 
-    return (int(outputNode + oB))
+    return (float(outputNode + oB))
 
 def main():
     #Matrix to store values after each epoch
+    initWeights()
     epochM = np.zeros(len(testData))
 
     #Send each layer of test Data through feed forward algorithm
     for x in range(0, len(testData)):
         epochM[x] = activation(feedForward(testData[x]))
 
-    print(epochM)
-    return costFunction(normaliseData(desiredOut, "pre"), epochM)
+    cost_after_epoch = costFunction(normaliseData(desiredOut, "pre"), epochM)
     
 print(main())
 
