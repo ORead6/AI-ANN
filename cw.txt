@@ -9,7 +9,6 @@ testData = np.matrix([[10.4,4.393,9.291,0,0,0,4],
             [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
             [32.1,10.237,34.416,0,0,1.6,0.8]])
 
-desiredOut = [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
 #Changing between 1-0
 
 def normaliseData(data, case):
@@ -117,6 +116,35 @@ def feedForward(input_layer):
 
     return (float(outputNode + oB))
 
+def derivative(output):
+    return (output * (1 - output))
+
+def backProp(end_epoch, realVals):
+    epoch_errors = np.zeros(len(end_epoch))
+    realVals = normaliseData(realVals, "pre")
+
+    for i in range(0, len(end_epoch)):
+        error = (end_epoch[i] - realVals[i]) * derivative(end_epoch[i])
+        epoch_errors[i] = error
+
+    hidden_errors = [[0] * H_dim for each in end_epoch]
+    for i in range(0, len(end_epoch)):
+        for j in range(0, H_dim):
+            output_error = epoch_errors[i]
+            output = end_epoch[i]
+            weight = hW[j]
+            hidden_err = (weight * output_error) * derivative(output)
+            hidden_errors[i][j] = hidden_err
+
+    hidden_errors = np.matrix(hidden_errors)
+    print("Errors on the OUTPUT nodes:" + str(epoch_errors))
+    print("Errors on the HIDDEN nodes:" + str(hidden_errors))
+
+def realOutput():
+    #Search through test data, and get the real outputs
+    #Test data for now
+    return [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
+
 def main():
     #Matrix to store values after each epoch
     initWeights()
@@ -126,9 +154,13 @@ def main():
     for x in range(0, len(testData)):
         epochM[x] = activation(feedForward(testData[x]))
 
-    cost_after_epoch = costFunction(normaliseData(desiredOut, "pre"), epochM)
 
-    print(cost_after_epoch)
+    #Get the desiredOutputs
+    desiredOut = realOutput()
+
+    backProp(epochM, desiredOut)
+
+
     
 main()
 
