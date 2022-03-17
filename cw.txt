@@ -127,8 +127,10 @@ def main():
         epochM[x] = activation(feedForward(testData[x]))
 
     cost_after_epoch = costFunction(normaliseData(desiredOut, "pre"), epochM)
+
+    print(cost_after_epoch)
     
-print(main())
+main()
 
 
 
