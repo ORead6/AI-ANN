@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import matplotlib.pyplot as mp
 
 #Change to get dataset in format as shown
 testData = np.matrix([[10.4,4.393,9.291,0,0,0,4], 
@@ -41,6 +42,10 @@ I_dim = 7
 #5 Neurons
 H_dim = 5
 
+#Learning Rate
+global learning_param
+learning_param = 0.1
+
 #3D Array for weights per layer
 global weights
 weights = np.zeros(shape=(H_dim, len(testData)+1))
@@ -54,6 +59,12 @@ hW = np.zeros(H_dim).transpose()
 
 #output Bias
 oB = 0
+
+#Error Values
+errorGraph = []
+
+#Amount of Epochs to do
+epochCount = 1
 
 def initWeights():
     #Init weight values using Xavier weight Intialisation
@@ -84,14 +95,10 @@ def activation(x):
 
 #Error Function
 def costFunction(real, AI):
-    #SSE
-    SSE = 0
+    real = normaliseData(real, "pre")
     for i in range(0, len(real)):
-        SSE += (real[i] - AI[i])**  2
-
-    MSE = SSE * (1/(len(real)))
-
-    return MSE
+        error = abs(real[i] - AI[i])
+        errorGraph.append(error.item(0))
 
 
 #Apply weights to each input value for each hidden layer and get their values
@@ -117,6 +124,7 @@ def feedForward(input_layer):
     return (float(outputNode + oB))
 
 def derivative(output):
+    #Output is val of sigmoid(x)
     return (output * (1 - output))
 
 def backProp(end_epoch, realVals):
@@ -136,37 +144,54 @@ def backProp(end_epoch, realVals):
             hidden_err = (weight * output_error) * derivative(output)
             hidden_errors[i][j] = hidden_err
 
-    hidden_errors = np.matrix(hidden_errors)
-    print("Errors on the OUTPUT nodes:" + str(epoch_errors))
-    print("Errors on the HIDDEN nodes:" + str(hidden_errors))
+    #print("Errors on the OUTPUT nodes:" + str(epoch_errors))
+    #print("Errors on the HIDDEN nodes:" + str(hidden_errors))
+
+
+    for i in range(0, len(hidden_errors)-1):
+        delta = epoch_errors[i]
+        hW[i] += (learning_param * delta * hW[i])
+        oB += (learning_param * delta)
+
+    for i in range(0 , len(hidden_errors)-1):
+        for j in range(0, len(hidden_errors[i])):
+            delta = hidden_errors[i][j]
+            weights[i][j] += (learning_param * delta * testData.item(i, j))
 
 def realOutput():
     #Search through test data, and get the real outputs
     #Test data for now
     return [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
 
+def plotGraph():
+    print(errorGraph)
+    mp.plot([x for x in range(len(errorGraph))], errorGraph)
+    mp.xlabel("Epochs")
+    mp.ylabel("Error")
+    mp.title("Error Over Time")
+    mp.show()
+
 def main():
     #Matrix to store values after each epoch
     initWeights()
     epochM = np.zeros(len(testData))
-
-    #Send each layer of test Data through feed forward algorithm
-    for x in range(0, len(testData)):
-        epochM[x] = activation(feedForward(testData[x]))
+    for i in range(epochCount):
 
 
-    #Get the desiredOutputs
-    desiredOut = realOutput()
+        #Send each layer of test Data through feed forward algorithm
+        for x in range(0, len(testData)):
+            epochM[x] = activation(feedForward(testData[x]))
 
-    backProp(epochM, desiredOut)
 
+        #Get the desiredOutputs
+        desiredOut = realOutput()
 
+        costFunction(desiredOut, epochM)
+        backProp(epochM, desiredOut)
+
+    plotGraph()
     
 main()
-
-
-
-
 
 
 
