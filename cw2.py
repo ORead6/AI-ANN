@@ -1,14 +1,15 @@
+from opcode import hasjabs
 import numpy as np
 import random
 import matplotlib.pyplot as mp
 
 #Change to get dataset in format as shown
-testData = np.matrix([[10.4,4.393,9.291,0,0,0,4], 
+testData = [[10.4,4.393,9.291,0,0,0,4], 
             [9.95,4.239,8.622,0,0,0.8,0],
             [9.46,4.124,8.057,0,0,0.8,0],
             [9.41,4.363,7.925,2.4,24.8,0.8,61.6],
             [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
-            [32.1,10.237,34.416,0,0,1.6,0.8]])
+            [32.1,10.237,34.416,0,0,1.6,0.8]]
 
 desiredOut =  [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
 
@@ -16,7 +17,7 @@ desiredOut =  [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
 I_dim = 7
 
 #Hidden Neurons
-H_dim = 2
+H_dim = 1
 
 #Output Neurons
 O_dim = 1
@@ -25,7 +26,7 @@ O_dim = 1
 learning_param = 0.1
 
 #Amount of epochs
-epochCount = 2
+epochCount = 5
 
 def normaliseData(data, case):
 #Assign realistic min and max values with the ranges of data
@@ -57,14 +58,32 @@ def activation(x):
 def derivative(x):
     return (x - (1 - x))
 
+def plotGraph(errorGraph):
+    print(errorGraph)
+    mp.plot([x for x in range(len(errorGraph))], errorGraph)
+    mp.xlabel("Epochs")
+    mp.ylabel("Error")
+    mp.title("Error Over Time")
+    mp.show()
+
 def backProp(dataIndex, hidNeurons, outNeurons, observed):
     desiredOutVal = observed[dataIndex]
     desiredOutVal = normaliseData(desiredOutVal, "pre")
+    inpVal = testData[dataIndex]
     overallError = []
 
     for i in range(0, len(outNeurons)):
         error = abs(outNeurons[i]["val"] - desiredOutVal)
         overallError.append(error)
+        outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * (derivative(outNeurons[i]["val"]))
+
+
+    for i in range(0, len(hidNeurons)):
+        for j in range(0, len(outNeurons)):
+            weightToOut = outNeurons[j]["weights"][i] 
+            outDelta = outNeurons[j]["delta"]
+            nodeVal = hidNeurons[i]["act"]
+            hidNeurons[i]["delta"] = (weightToOut * outDelta * derivative(nodeVal))
 
 
 def getOverall(data):
@@ -73,6 +92,14 @@ def getOverall(data):
         sum += data[i]
     
     return (sum / len(data))
+
+def wSum(m1, m2):
+    sum = 0
+    for i in range(0, len(m1)):
+        sum += m1[i]*m2[i]
+        
+
+    return sum
 
 def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
     epochErrors = []
@@ -83,29 +110,32 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
 
             for x in range(0, H_dim):
                 weights = hiddenNeurons[x]["weights"]
-                wS = np.matmul((np.matrix(weights)), (np.matrix(thisPass)).transpose()) + hiddenNeurons[x]["bias"]
-                hiddenNeurons[x]["act"] = activation(wS.item(0))
+                wS = wSum(weights, thisPass) + hiddenNeurons[x]["bias"]
+                hiddenNeurons[x]["act"] = activation(wS)
 
             for x in range(0, O_dim):
                 weights = outputNeurons[x]["weights"]
                 actVals = [neuron["act"] for neuron in hiddenNeurons]
-                wS = np.matmul((np.matrix(weights)).transpose(), (np.matrix(actVals))) + outputNeurons[x]["bias"]
-                outputNeurons[x]["val"] = activation(wS.item(0))
+                #Add bias
+                wS = wSum(weights, actVals)
+                outputNeurons[x]["val"] = activation(wS)
 
                 error = abs(outputNeurons[x]["val"] - normaliseData(observedVal[i], "pre"))
                 errors.append(error)
 
+            backProp(i, hiddenNeurons, outputNeurons, observedVal)
+
         epochErrors.append(getOverall(errors))
 
-        backProp(i, hiddenNeurons, outputNeurons, observedVal)
-
+    return(epochErrors)
 
             
         
 
 def main(data, endData):
     #Feed Forward Algorithm
-    feedForward(data, hidden, output, endData)
+    plotGraph(feedForward(data, hidden, output, endData))
+    
 
 
 #HiddenNeurons
