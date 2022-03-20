@@ -14,10 +14,10 @@ testData = [[10.4,4.393,9.291,0,0,0,4],
 desiredOut =  [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
 
 #Neurons is how long the test Data array is
-I_dim = 7
+I_dim = 2
 
 #Hidden Neurons
-H_dim = 1
+H_dim = 7
 
 #Output Neurons
 O_dim = 1
@@ -26,12 +26,12 @@ O_dim = 1
 learning_param = 0.1
 
 #Amount of epochs
-epochCount = 5
+epochCount = 10000
 
 def normaliseData(data, case):
 #Assign realistic min and max values with the ranges of data
-    maxVal = 100 #Look through data set and change this value appropriately
-    minVal = 0
+    maxVal = 98.01 #Look through data set and change this value appropriately
+    minVal = 23.47
 
     #Normalise data set between 0-1 for compairson
     if (case == "pre"):
@@ -46,7 +46,7 @@ def normaliseData(data, case):
 def weightInit(dict):
     for i in range(0, len(dict)):
         for x in range(0, len(dict[i]["weights"])):
-            dict[i]["weights"][x] = random.uniform(-(1/np.sqrt(I_dim)), (1/np.sqrt(I_dim)))
+            dict[i]["weights"][x] = random.uniform(0, 1)
 
     return dict
 
@@ -59,10 +59,9 @@ def derivative(x):
     return (x - (1 - x))
 
 def plotGraph(errorGraph):
-    print(errorGraph)
     mp.plot([x for x in range(len(errorGraph))], errorGraph)
     mp.xlabel("Epochs")
-    mp.ylabel("Error")
+    mp.ylabel("RMSE")
     mp.title("Error Over Time")
     mp.show()
 
@@ -73,33 +72,47 @@ def backProp(dataIndex, hidNeurons, outNeurons, observed):
     overallError = []
 
     for i in range(0, len(outNeurons)):
-        error = abs(outNeurons[i]["val"] - desiredOutVal)
+        # Output Delta
+        error = (desiredOutVal - outNeurons[i]["val"]) * (derivative(outNeurons[i]["val"]))
         overallError.append(error)
-        outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * (derivative(outNeurons[i]["val"]))
+        outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * derivative(outNeurons[i]["wS"])
 
 
     for i in range(0, len(hidNeurons)):
         for j in range(0, len(outNeurons)):
-            weightToOut = outNeurons[j]["weights"][i] 
-            outDelta = outNeurons[j]["delta"]
-            nodeVal = hidNeurons[i]["act"]
-            hidNeurons[i]["delta"] = (weightToOut * outDelta * derivative(nodeVal))
+            # Hidden Delta
+            hidNeurons[i]["delta"] = (outNeurons[j]["weights"][i] * outNeurons[j]["delta"] * hidNeurons[i]["wS"])
+
+    #Update Weights Here
+    for i in range(0, len(outNeurons)):
+        outNeurons[i]["bias"] += (learning_param * outNeurons[i]["delta"])
+        for x in range(0, len(outNeurons[i]["weights"])):
+            outNeurons[i]["weights"][x] += (learning_param * outNeurons[i]["delta"] * outNeurons[i]["val"])
 
 
+    for i in range(0, len(hidNeurons)):
+        hidNeurons[i]["bias"] += (learning_param * hidNeurons[i]["delta"])
+        for x in range(0, len(hidNeurons[i]["weights"])):
+            hidNeurons[i]["weights"][x] += (learning_param * hidNeurons[i]["delta"] * normaliseData(inpVal[x], "pre"))
+
+    
 def getOverall(data):
+    #RMSE
     sum = 0
     for i in range(0, len(data)):
         sum += data[i]
     
-    return (sum / len(data))
+    return (np.sqrt(sum / len(data)))
 
 def wSum(m1, m2):
     sum = 0
     for i in range(0, len(m1)):
         sum += m1[i]*m2[i]
         
-
     return sum
+
+def errorFunc(predicted, observed):
+    return (predicted - observed)**2
 
 def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
     epochErrors = []
@@ -110,7 +123,12 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
 
             for x in range(0, H_dim):
                 weights = hiddenNeurons[x]["weights"]
-                wS = wSum(weights, thisPass) + hiddenNeurons[x]["bias"]
+
+                #Change this pass to normalise data set
+                norm = [normaliseData(each, "pre") for each in thisPass]
+                wS = wSum(weights, norm) + hiddenNeurons[x]["bias"]
+                hiddenNeurons[x]["wS"] = wS
+                #print(wS)
                 hiddenNeurons[x]["act"] = activation(wS)
 
             for x in range(0, O_dim):
@@ -118,9 +136,10 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
                 actVals = [neuron["act"] for neuron in hiddenNeurons]
                 #Add bias
                 wS = wSum(weights, actVals)
+                outputNeurons[x]["wS"] = wS
                 outputNeurons[x]["val"] = activation(wS)
 
-                error = abs(outputNeurons[x]["val"] - normaliseData(observedVal[i], "pre"))
+                error = errorFunc(outputNeurons[x]["val"], normaliseData(observedVal[i], "pre"))
                 errors.append(error)
 
             backProp(i, hiddenNeurons, outputNeurons, observedVal)
