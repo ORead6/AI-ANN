@@ -1,4 +1,3 @@
-from opcode import hasjabs
 import numpy as np
 import random
 import matplotlib.pyplot as mp
@@ -30,7 +29,7 @@ O_dim = 1
 learning_param = 0.1
 
 #Amount of epochs
-epochCount = 1000
+epochCount = 1000000
 
 def normaliseData(data, case):
 #Assign realistic min and max values with the ranges of data
@@ -60,7 +59,7 @@ def activation(x):
     return result
 
 def derivative(x):
-    return (x - (1 - x))
+    return (x * (1 - x))
 
 def plotGraph(errorGraph):
     mp.plot([x for x in range(len(errorGraph))], errorGraph)
@@ -73,12 +72,9 @@ def backProp(dataIndex, hidNeurons, outNeurons, observed):
     desiredOutVal = observed[dataIndex]
     desiredOutVal = normaliseData(desiredOutVal, "pre")
     inpVal = testData[dataIndex]
-    overallError = []
 
     for i in range(0, len(outNeurons)):
         # Output Delta
-        error = (desiredOutVal - outNeurons[i]["val"]) * (derivative(outNeurons[i]["val"]))
-        overallError.append(error)
         outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * derivative(outNeurons[i]["val"])
 
 
@@ -143,6 +139,8 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
                 outputNeurons[x]["wS"] = wS
                 outputNeurons[x]["val"] = activation(wS)
 
+                print("Expected: %f             Got: %f" %(observedVal[i], normaliseData(outputNeurons[x]["val"], "post")))
+
                 error = errorFunc(outputNeurons[x]["val"], normaliseData(observedVal[i], "pre"))
                 errors.append(error)
 
@@ -170,7 +168,7 @@ hidden = weightInit(hidden)
 #Hidden -> Output Weights Neurons
 output = []
 for i in range(O_dim):
-    output.append({"weights": ([2] * H_dim), "bias": 0, "val": 0 ,"selfWeight": (random.uniform(0, 1) / I_dim)}) 
+    output.append({"weights": ([2] * H_dim), "bias": 0, "val": 0 ,"selfWeight": (random.uniform(0, 1) / H_dim)}) 
 output = weightInit(output)
 
 
