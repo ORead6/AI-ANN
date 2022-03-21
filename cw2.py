@@ -4,14 +4,18 @@ import random
 import matplotlib.pyplot as mp
 
 #Change to get dataset in format as shown
-testData = [[10.4,4.393,9.291,0,0,0,4], 
-            [9.95,4.239,8.622,0,0,0.8,0],
-            [9.46,4.124,8.057,0,0,0.8,0],
-            [9.41,4.363,7.925,2.4,24.8,0.8,61.6],
-            [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
-            [32.1,10.237,34.416,0,0,1.6,0.8]]
+#testData = [[10.4,4.393,9.291,0,0,0,4], 
+#            [9.95,4.239,8.622,0,0,0.8,0],
+#            [9.46,4.124,8.057,0,0,0.8,0],
+#            [9.41,4.363,7.925,2.4,24.8,0.8,61.6],
+#            [26.3,11.962,58.704,11.2,5.6,33.6,111.2],
+#            [32.1,10.237,34.416,0,0,1.6,0.8]]
 
-desiredOut =  [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
+#desiredOut =  [26.1, 24.86, 23.6, 23.47, 60.7, 98.01]
+
+testData = [[0, 0], [0, 1], [1, 0], [1, 1]]
+
+desiredOut = [0, 1, 1, 0]
 
 #Neurons is how long the test Data array is
 I_dim = 2
@@ -26,12 +30,12 @@ O_dim = 1
 learning_param = 0.1
 
 #Amount of epochs
-epochCount = 10000
+epochCount = 1000
 
 def normaliseData(data, case):
 #Assign realistic min and max values with the ranges of data
-    maxVal = 98.01 #Look through data set and change this value appropriately
-    minVal = 23.47
+    maxVal = 1 #98.01 #Look through data set and change this value appropriately
+    minVal = 0 #23.47
 
     #Normalise data set between 0-1 for compairson
     if (case == "pre"):
@@ -75,19 +79,19 @@ def backProp(dataIndex, hidNeurons, outNeurons, observed):
         # Output Delta
         error = (desiredOutVal - outNeurons[i]["val"]) * (derivative(outNeurons[i]["val"]))
         overallError.append(error)
-        outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * derivative(outNeurons[i]["wS"])
+        outNeurons[i]["delta"] = (desiredOutVal - outNeurons[i]["val"]) * derivative(outNeurons[i]["val"])
 
 
     for i in range(0, len(hidNeurons)):
         for j in range(0, len(outNeurons)):
             # Hidden Delta
-            hidNeurons[i]["delta"] = (outNeurons[j]["weights"][i] * outNeurons[j]["delta"] * hidNeurons[i]["wS"])
+            hidNeurons[i]["delta"] = (outNeurons[j]["weights"][i] * outNeurons[j]["delta"] *  derivative(hidNeurons[i]["act"]))
 
     #Update Weights Here
     for i in range(0, len(outNeurons)):
         outNeurons[i]["bias"] += (learning_param * outNeurons[i]["delta"])
         for x in range(0, len(outNeurons[i]["weights"])):
-            outNeurons[i]["weights"][x] += (learning_param * outNeurons[i]["delta"] * outNeurons[i]["val"])
+            outNeurons[i]["weights"][x] += (learning_param * outNeurons[i]["delta"] * hidNeurons[x]["act"])
 
 
     for i in range(0, len(hidNeurons)):
@@ -126,7 +130,7 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
 
                 #Change this pass to normalise data set
                 norm = [normaliseData(each, "pre") for each in thisPass]
-                wS = wSum(weights, norm) + hiddenNeurons[x]["bias"]
+                wS = wSum(weights, norm) + (hiddenNeurons[x]["selfWeight"] * hiddenNeurons[x]["act"])
                 hiddenNeurons[x]["wS"] = wS
                 #print(wS)
                 hiddenNeurons[x]["act"] = activation(wS)
@@ -135,7 +139,7 @@ def feedForward(inputs, hiddenNeurons, outputNeurons, observedVal):
                 weights = outputNeurons[x]["weights"]
                 actVals = [neuron["act"] for neuron in hiddenNeurons]
                 #Add bias
-                wS = wSum(weights, actVals)
+                wS = wSum(weights, actVals) + (outputNeurons[x]["selfWeight"] * outputNeurons[x]["val"])
                 outputNeurons[x]["wS"] = wS
                 outputNeurons[x]["val"] = activation(wS)
 
@@ -160,13 +164,13 @@ def main(data, endData):
 #HiddenNeurons
 hidden = []
 for i in range(H_dim):
-    hidden.append({"weights": ([1] * I_dim), "bias": 0, "act": 0}) 
+    hidden.append({"weights": ([1] * I_dim), "bias": 0, "act": 0, "selfWeight": (random.uniform(0, 1) / I_dim)}) 
 hidden = weightInit(hidden)
 
 #Hidden -> Output Weights Neurons
 output = []
 for i in range(O_dim):
-    output.append({"weights": ([2] * H_dim), "bias": 0}) 
+    output.append({"weights": ([2] * H_dim), "bias": 0, "val": 0 ,"selfWeight": (random.uniform(0, 1) / I_dim)}) 
 output = weightInit(output)
 
 
