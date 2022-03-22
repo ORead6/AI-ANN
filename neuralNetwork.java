@@ -1,28 +1,32 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class neuralNetwork{
 
     public static int I_dim = 2;
     public static int H_dim = 2;
     public static int O_dim = 1;
 
-    public static int epochCount = 10000;
+    public static int epochCount = 1000000;
     public static Double learning_param = 0.1;
 
-    public static Double[][] weightToHid = new Double[I_dim][H_dim];
-    public static Double[] weightToOut = new Double[H_dim];
-    public static Double[] hidBias = new Double[H_dim];
-    public static Double[] hidVals = new Double[H_dim];
-    public static Double[] hidSelfWeight = new Double[H_dim]; 
-    public static Double[] outSelfWeight = new Double[O_dim]; 
-    public static Double outBias = Math.random() / H_dim;
-    public static Double outVal = 0.0;
-    public static Double[] outDelta = new Double[O_dim];
-    public static Double[] hidDelta = new Double[H_dim];
+    public static double[][] weightToHid = new double[I_dim][H_dim];
+    public static double[] weightToOut = new double[H_dim];
+    public static double[] hidBias = new double[H_dim];
+    public static double[] hidVals = new double[H_dim];
+    public static double[] hidSelfWeight = new double[H_dim]; 
+    public static double[] outSelfWeight = new double[O_dim]; 
+    public static double outBias = Math.random() / H_dim;
+    public static double outVal = 0.0;
+    public static double[] outDelta = new double[O_dim];
+    public static double[] hidDelta = new double[H_dim];
 
-    public static Double[][] data = getData();
-    public static Double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
+    public static double[][] data = getData();
+    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
 
-    public static Double[][] getData(){
-        Double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    public static double[][] getData(){
+        double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
         return theData;
     }
 
@@ -45,20 +49,22 @@ public class neuralNetwork{
         outDelta[0] = 0.0;
     }
 
-    public static Double[] normaliseData(Double[] data, String thisCase){
+    public static double[] normaliseData(double[] data, String thisCase){
         int minVal = 0;
         int maxVal = 1;
 
         if (thisCase == "pre"){
-            Double[] answer = new Double[data.length];
-            for (int i = 0; i < answer.length; i++){
+            double[] answer = new double[data.length];
+            int size = answer.length;
+            for (int i = 0; i < size; i++){
                 answer[i] = (data[i] - minVal) / (maxVal - minVal);
             }
             return answer;
 
         } else {
-            Double[] answer = new Double[data.length];
-            for (int i = 0; i < answer.length; i++){
+            double[] answer = new double[data.length];
+            int size = answer.length;
+            for (int i = 0; i < size; i++){
                 answer[i] = (data[i] * (maxVal - minVal)) + minVal;
             }
             return answer;
@@ -67,52 +73,54 @@ public class neuralNetwork{
         
     }
 
-    public static Double normaliseSingle(Double data, String thisCase){
+    public static double normaliseSingle(double data, String thisCase){
         int minVal = 0;
         int maxVal = 1;
 
         if (thisCase == "pre"){
-            Double answer;
+            double answer;
             answer = (data - minVal) / (maxVal - minVal);
             return answer;
 
         } else {
-            Double answer;
+            double answer;
             answer = (data * (maxVal - minVal)) + minVal;
             return answer;
         }
     }
 
-    public static Double wSum(Double[] m1, Double[] m2){
-        Double sum = 0.0;
-        for (int i = 0; i < m1.length; i++){
+    public static double wSum(double[] m1, double[] m2){
+        double sum = 0.0;
+        int size = m1.length;
+        for (int i = 0; i < size; i++){
             sum += m1[i] * m2[i];
             
         }
         return sum;
     }
 
-    public static Double errorFunc(Double predicted, Double real){
+    public static double errorFunc(double predicted, double real){
         return Math.pow((predicted - real), 2);
     }
 
-    public static Double activation(Double x){
+    public static double activation(double x){
         //Sigmoid
-        Double result = 1 / (1 + Math.exp(-x));
+        double result = 1 / (1 + Math.exp(-x));
         return result;
     }
 
-    public static Double getOverall(Double[] thisData){
-        Double sum = 0.0;
-        for (int i = 0; i < thisData.length; i++){
+    public static double getOverall(double [] thisData){
+        double sum = 0.0;
+        int size = thisData.length;
+        for (int i = 0; i < size; i++){
             sum += thisData[i];
         }
         return sum;
     }
 
-    public static void backProp(int dataIndex, Double observed){
-        Double desiredOutVal = normaliseSingle(observed, "pre");
-        Double[] inpVal = getData()[dataIndex];
+    public static void backProp(int dataIndex, double observed){
+        double desiredOutVal = normaliseSingle(observed, "pre");
+        double[] inpVal = getData()[dataIndex];
         
         for (int i = 0; i < O_dim; i++){
             outDelta[i] = (desiredOutVal - outVal) * derivative(outVal);
@@ -129,34 +137,34 @@ public class neuralNetwork{
 
     }
 
-    private static double derivative(Double x) {
+    private static double derivative(double x) {
         return (x * (1 - x));
     }
 
-    public static Double[] feedForward(int epochs){
-        Double[] epochErrors = new Double[epochs];
+    public static double[] feedForward(int epochs){
+        double[] epochErrors = new double[epochs];
         for (int j = 0; j < epochs; j++){
-            Double[] errors = new Double[getData().length];
+            double[] errors = new double[getData().length];
 
             for (int i = 0; i < getData().length; i++){
-                Double[] thisPass = getData()[i];
+                double[] thisPass = getData()[i];
                 for (int x = 0; x < H_dim; x++){
-                    Double[] weights = weightToHid[x];
+                    double[] weights = weightToHid[x];
 
-                    Double[] norm = normaliseData(thisPass, "pre"); 
-                    Double wS = wSum(weights, norm) + (hidSelfWeight[x] * hidVals[x]);
+                    double[] norm = normaliseData(thisPass, "pre"); 
+                    double wS = wSum(weights, norm) + (hidSelfWeight[x] * hidVals[x]);
 
                     hidVals[x] = activation(wS);
                 }
 
                 for (int x = 0; x < O_dim; x++){
-                    Double wS = wSum(weightToOut, hidVals) + (outSelfWeight[x] * outVal);
+                    double wS = wSum(weightToOut, hidVals) + (outSelfWeight[x] * outVal);
                     outVal = activation(wS);
 
-                    Double error = errorFunc(outVal, normaliseSingle(desiredOut[i], "pre"));
+                    double error = errorFunc(outVal, normaliseSingle(desiredOut[i], "pre"));
                     
-                    String results = String.format("Expected: %f             Got: %f", desiredOut[i], outVal);
-                    System.out.println(results);
+                    //String results = String.format("Expected: %f             Got: %f", desiredOut[i], outVal);
+                    //System.out.println(results);
                     errors[i] = error;
                 }
 
@@ -169,13 +177,24 @@ public class neuralNetwork{
         return(epochErrors);
     }
 
-    public static void plotGraph(Double[] errorGraph){
-        
+    public static void plotGraph(double[] errorGraph) throws IOException{
+        new FileWriter("errorData.txt").close();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("errorData.txt"))){
+            for (double line: errorGraph){
+                writer.write (line + "\n");
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace ();
+        }
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException{
         initWeights();
         plotGraph(feedForward(epochCount));
+        System.out.println("Done");
 
     }
 }
