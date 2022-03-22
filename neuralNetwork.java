@@ -11,7 +11,7 @@ public class neuralNetwork{
     public static int epochCount = 1000000;
     public static Double learning_param = 0.1;
 
-    public static double[][] weightToHid = new double[I_dim][H_dim];
+    public static double[][] weightToHid = new double[H_dim][I_dim];
     public static double[] weightToOut = new double[H_dim];
     public static double[] hidBias = new double[H_dim];
     public static double[] hidVals = new double[H_dim];
@@ -31,8 +31,8 @@ public class neuralNetwork{
     }
 
     public static void initWeights(){
-        for (int i = 0; i < I_dim; i++){
-            for (int x = 0; x < H_dim; x++){
+        for (int i = 0; i < H_dim; i++){
+            for (int x = 0; x < I_dim; x++){
                 weightToHid[i][x] = Math.random() / I_dim;
             }
         }
