@@ -4,7 +4,7 @@ public class neuralNetwork{
     public static int H_dim = 2;
     public static int O_dim = 1;
 
-    public static int epochCount = 100000;
+    public static int epochCount = 10000;
     public static Double learning_param = 0.1;
 
     public static Double[][] weightToHid = new Double[I_dim][H_dim];
@@ -155,8 +155,8 @@ public class neuralNetwork{
 
                     Double error = errorFunc(outVal, normaliseSingle(desiredOut[i], "pre"));
                     
-                    //String results = String.format("Expected: %f             Got: %f", desiredOut[i], outVal);
-                    //System.out.println(results);
+                    String results = String.format("Expected: %f             Got: %f", desiredOut[i], outVal);
+                    System.out.println(results);
                     errors[i] = error;
                 }
 

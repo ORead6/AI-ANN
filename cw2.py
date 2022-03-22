@@ -1,4 +1,4 @@
-import numpy as np
+from numpy import sqrt, exp
 import random
 import matplotlib.pyplot as mp
 
@@ -29,7 +29,7 @@ O_dim = 1
 learning_param = 0.1
 
 #Amount of epochs
-epochCount = 1000000
+epochCount = 10000
 
 def normaliseData(data, case):
 #Assign realistic min and max values with the ranges of data
@@ -55,7 +55,7 @@ def weightInit(dict):
 
 def activation(x):
     #Sigmoid
-    result = 1 / (1 + np.exp(-x))
+    result = 1 / (1 + exp(-x))
     return result
 
 def derivative(x):
@@ -102,7 +102,7 @@ def getOverall(data):
     for i in range(0, len(data)):
         sum += data[i]
     
-    return (np.sqrt(sum / len(data)))
+    return (sqrt(sum / len(data)))
 
 def wSum(m1, m2):
     sum = 0
