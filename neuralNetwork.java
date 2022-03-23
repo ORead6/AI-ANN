@@ -1,15 +1,22 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class neuralNetwork{
 
-    public static int I_dim = 2;
-    public static int H_dim = 2;
+    public static int I_dim = 8;
+    public static int H_dim = 5;
     public static int O_dim = 1;
 
-    public static int epochCount = 1000000;
-    public static Double learning_param = 0.1;
+    public static int epochCount = 100000;
+    public static Double learning_param = 0.2;
+
+    public static double minVal = 3.694; //Change this depending on data set
+    public static double maxVal = 448.1; //Change this depending on data set
 
     public static double[][] weightToHid = new double[H_dim][I_dim];
     public static double[] weightToOut = new double[H_dim];
@@ -22,13 +29,90 @@ public class neuralNetwork{
     public static double[] outDelta = new double[O_dim];
     public static double[] hidDelta = new double[H_dim];
 
-    public static double[][] data = getData();
-    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
+    //XOR Testing
+    //public static double[][] data = getData();
+    //public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
 
     public static double[][] getData(){
-        double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
-        return theData;
+        //XOR
+        //double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+        try {
+            ArrayList<String[]> theData1 = new ArrayList<String[]>();
+            BufferedReader csvReader = new BufferedReader(new FileReader("DataSet.csv"));
+            String row;
+            int x = 0;
+            while ((row = csvReader.readLine()) != null) {
+                if (x > 1){
+                    String[] data = row.split(",");
+                    theData1.add(Arrays.copyOfRange(data, 1, data.length));
+                } else {x++;}
+            }
+
+            csvReader.close();
+
+            double[][] theData = new double[theData1.size()][8];
+
+            int size2 = theData1.size();
+            for (int i = 0; i < size2; i++){
+                int size3 = theData1.get(i).length;
+                double[] temp = new double[size3];
+                for (int y = 0; y < size3; y++){
+                    if (theData1.get(i)[y] != ""){
+                        temp[y] = Double.parseDouble(theData1.get(i)[y]);
+                    }
+                }
+
+                theData[i] = temp;
+            }
+
+            return theData;
+
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return data;
+
     }
+
+    public static double[] getDesiredData(){
+        //XOR
+        //double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+        try {
+            ArrayList<String> desiredOut1 = new ArrayList<String>();
+            BufferedReader csvReader = new BufferedReader(new FileReader("DataSet.csv"));
+            String row;
+            int x = 0;
+            while ((row = csvReader.readLine()) != null) {
+                if (x > 1){
+                    String[] data = row.split(",");
+                    desiredOut1.add(data[3]);
+                } else {x++;}
+            }
+
+            csvReader.close();
+
+            double[] desiredOut = new double[desiredOut1.size()];
+
+            int size = desiredOut1.size();
+            for (int i = 0; i < size; i++){
+                desiredOut[i] = Double.parseDouble(desiredOut1.get(i));
+            }
+
+            return desiredOut;
+
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return desiredOut;
+
+    }
+
+    public static double[][] data = getData();
+    public static double[] desiredOut = getDesiredData();
 
     public static void initWeights(){
         for (int i = 0; i < H_dim; i++){
@@ -50,8 +134,6 @@ public class neuralNetwork{
     }
 
     public static double[] normaliseData(double[] data, String thisCase){
-        int minVal = 0;
-        int maxVal = 1;
 
         if (thisCase == "pre"){
             double[] answer = new double[data.length];
@@ -74,8 +156,6 @@ public class neuralNetwork{
     }
 
     public static double normaliseSingle(double data, String thisCase){
-        int minVal = 0;
-        int maxVal = 1;
 
         if (thisCase == "pre"){
             double answer;
@@ -120,7 +200,7 @@ public class neuralNetwork{
 
     public static void backProp(int dataIndex, double observed){
         double desiredOutVal = normaliseSingle(observed, "pre");
-        double[] inpVal = getData()[dataIndex];
+        double[] inpVal = data[dataIndex];
         
         for (int i = 0; i < O_dim; i++){
             outDelta[i] = (desiredOutVal - outVal) * derivative(outVal);
@@ -144,10 +224,10 @@ public class neuralNetwork{
     public static double[] feedForward(int epochs){
         double[] epochErrors = new double[epochs];
         for (int j = 0; j < epochs; j++){
-            double[] errors = new double[getData().length];
+            double[] errors = new double[data.length];
 
-            for (int i = 0; i < getData().length; i++){
-                double[] thisPass = getData()[i];
+            for (int i = 0; i < data.length; i++){
+                double[] thisPass = data[i];
                 for (int x = 0; x < H_dim; x++){
                     double[] weights = weightToHid[x];
 
@@ -192,6 +272,8 @@ public class neuralNetwork{
     }
 
     public static void main(String[] args) throws IOException{
+        System.out.println(data.length);
+        System.out.print(desiredOut.length);
         initWeights();
         plotGraph(feedForward(epochCount));
         System.out.println("Done");
