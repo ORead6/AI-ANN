@@ -12,7 +12,7 @@ public class neuralNetwork{
     public static int H_dim = 5;
     public static int O_dim = 1;
 
-    public static int epochCount = 100000;
+    public static int epochCount = 100;
     public static Double learning_param = 0.2;
 
     public static double minVal = 3.694; //Change this depending on data set
@@ -115,6 +115,8 @@ public class neuralNetwork{
     public static double[] desiredOut = getDesiredData();
 
     public static void initWeights(){
+        int max = 1;
+        int min = -1;
         for (int i = 0; i < H_dim; i++){
             for (int x = 0; x < I_dim; x++){
                 weightToHid[i][x] = Math.random() / I_dim;
@@ -122,10 +124,10 @@ public class neuralNetwork{
         }
 
         for (int i = 0; i < H_dim; i++){
-            weightToOut[i] = Math.random() / H_dim;
-            hidBias[i] = Math.random() / H_dim;
-            hidVals[i] = Math.random() / I_dim;
-            hidSelfWeight[i] = Math.random() / I_dim;
+            weightToOut[i] = ((Math.random() * (max - min)) + min) / H_dim;
+            hidBias[i] = ((Math.random() * (max - min)) + min) / H_dim;
+            hidVals[i] = ((Math.random() * (max - min)) + min) / I_dim;
+            hidSelfWeight[i] = ((Math.random() * (max - min)) + min) / I_dim;
             hidDelta[i] = 0.0;
         }
 
@@ -243,7 +245,7 @@ public class neuralNetwork{
 
                     double error = errorFunc(outVal, normaliseSingle(desiredOut[i], "pre"));
                     
-                    //String results = String.format("Expected: %f             Got: %f", desiredOut[i], outVal);
+                    //String results = String.format("Expected: %f             Got: %f", normaliseSingle(desiredOut[i], "pre"), outVal);
                     //System.out.println(results);
                     errors[i] = error;
                 }
@@ -251,7 +253,7 @@ public class neuralNetwork{
                 backProp(i, desiredOut[i]);
 
             }
-            epochErrors[j] = getOverall(errors);
+            epochErrors[j] = Math.pow(getOverall(errors) / data.length, 0.5);
         } 
 
         return(epochErrors);
