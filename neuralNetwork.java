@@ -8,15 +8,15 @@ import java.util.Arrays;
 
 public class neuralNetwork{
 
-    public static int I_dim = 8;
-    public static int H_dim = 5;
+    public static int I_dim = 2; //8;
+    public static int H_dim = 8; //5;
     public static int O_dim = 1;
 
-    public static int epochCount = 100;
-    public static Double learning_param = 0.2;
+    public static int epochCount = 100000;
+    public static Double learning_param = 0.1;
 
-    public static double minVal = 3.694; //Change this depending on data set
-    public static double maxVal = 448.1; //Change this depending on data set
+    public static double minVal = 0; //3.694; //Change this depending on data set
+    public static double maxVal = 1; //448.1; //Change this depending on data set
 
     public static double[][] weightToHid = new double[H_dim][I_dim];
     public static double[] weightToOut = new double[H_dim];
@@ -24,14 +24,14 @@ public class neuralNetwork{
     public static double[] hidVals = new double[H_dim];
     public static double[] hidSelfWeight = new double[H_dim]; 
     public static double[] outSelfWeight = new double[O_dim]; 
-    public static double outBias = Math.random() / H_dim;
+    public static double outBias = 0;
     public static double outVal = 0.0;
     public static double[] outDelta = new double[O_dim];
     public static double[] hidDelta = new double[H_dim];
 
     //XOR Testing
-    //public static double[][] data = getData();
-    //public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
+    public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData();
+    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
 
     public static double[][] getData(){
         //XOR
@@ -111,8 +111,8 @@ public class neuralNetwork{
 
     }
 
-    public static double[][] data = getData();
-    public static double[] desiredOut = getDesiredData();
+    //public static double[][] data = getData();
+    //public static double[] desiredOut = getDesiredData();
 
     public static void initWeights(){
         int max = 1;
@@ -125,7 +125,7 @@ public class neuralNetwork{
 
         for (int i = 0; i < H_dim; i++){
             weightToOut[i] = ((Math.random() * (max - min)) + min) / H_dim;
-            hidBias[i] = ((Math.random() * (max - min)) + min) / H_dim;
+            hidBias[i] = 0;
             hidVals[i] = ((Math.random() * (max - min)) + min) / I_dim;
             hidSelfWeight[i] = ((Math.random() * (max - min)) + min) / I_dim;
             hidDelta[i] = 0.0;
@@ -274,11 +274,11 @@ public class neuralNetwork{
     }
 
     public static void main(String[] args) throws IOException{
-        System.out.println(data.length);
-        System.out.print(desiredOut.length);
         initWeights();
         plotGraph(feedForward(epochCount));
         System.out.println("Done");
+        System.out.print("Value predicted: ");
+        System.out.print(normaliseSingle(outVal, "post"));
 
     }
 }
