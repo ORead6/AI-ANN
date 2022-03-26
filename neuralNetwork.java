@@ -12,7 +12,7 @@ public class neuralNetwork{
     public static int H_dim = 8; //5;
     public static int O_dim = 1;
 
-    public static int epochCount = 100000;
+    public static int epochCount = 1000;
     public static Double learning_param = 0.1;
 
     public static double minVal = 0; //3.694; //Change this depending on data set
