@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class neuralNetwork{
 
@@ -12,7 +13,7 @@ public class neuralNetwork{
     public static int H_dim = 8; //5;
     public static int O_dim = 1;
 
-    public static int epochCount = 100000;
+    public static int epochCount = 1000000;
     public static Double learning_param = 0.1;
 
     public static double minVal = 0; //3.694; //Change this depending on data set
@@ -223,8 +224,9 @@ public class neuralNetwork{
         return (x * (1 - x));
     }
 
-    public static double[] feedForward(int epochs){
+    public static double[] feedForward(int epochs, boolean training){
         double[] epochErrors = new double[epochs];
+        double[] results = new double[data.length];
         for (int j = 0; j < epochs; j++){
             double[] errors = new double[data.length];
 
@@ -250,13 +252,21 @@ public class neuralNetwork{
                     errors[i] = error;
                 }
 
-                backProp(i, desiredOut[i]);
+                if (training){
+                    backProp(i, desiredOut[i]);
+                } else {
+                    results[i] = outVal;
+                }
 
             }
             epochErrors[j] = Math.pow(getOverall(errors) / data.length, 0.5);
         } 
 
-        return(epochErrors);
+        if (training){
+            return(epochErrors);
+        } else {
+            return results;
+        }
     }
 
     public static void plotGraph(double[] errorGraph) throws IOException{
@@ -275,10 +285,18 @@ public class neuralNetwork{
 
     public static void main(String[] args) throws IOException{
         initWeights();
-        plotGraph(feedForward(epochCount));
-        System.out.println("Done");
-        System.out.print("Value predicted: ");
-        System.out.print(normaliseSingle(outVal, "post"));
+        plotGraph(feedForward(epochCount, true));
+        
+        double[] thisTable = feedForward(1, false);
+
+        IntStream.iterate(1, i -> i + 1).limit(I_dim).forEach(i -> System.out.print(String.format("   Input%d    |", i)));
+        System.out.print("   Expected    |");
+        System.out.print("   Result    |");
+        System.out.println();
+        IntStream.iterate(0, i -> i + 1).limit(I_dim + 2).forEach(i -> System.out.print("--------------"));
+        System.out.println("--");
+        IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
+
 
     }
 }
