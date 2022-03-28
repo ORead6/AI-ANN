@@ -5,15 +5,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.stream.IntStream;
 
 public class neuralNetwork{
 
-    public static int I_dim = 2; //8;
+    public static int I_dim = 2;
     public static int H_dim = 8; //5;
     public static int O_dim = 1;
 
-    public static int epochCount = 1000000;
+    public static int epochCount = 4;
     public static Double learning_param = 0.1;
 
     public static double minVal = 0; //3.694; //Change this depending on data set
@@ -31,8 +32,8 @@ public class neuralNetwork{
     public static double[] hidDelta = new double[H_dim];
 
     //XOR Testing
-    public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData();
-    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0};
+    public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData(); 
+    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0}; //getDesiredData();
 
     public static double[][] getData(){
         //XOR
@@ -224,9 +225,10 @@ public class neuralNetwork{
         return (x * (1 - x));
     }
 
-    public static double[] feedForward(int epochs, boolean training){
+    public static double[] feedForward(int epochs, boolean training) throws IOException{
         double[] epochErrors = new double[epochs];
         double[] results = new double[data.length];
+        double[][] dotResults = new double[data.length][2];
         for (int j = 0; j < epochs; j++){
             double[] errors = new double[data.length];
 
@@ -255,7 +257,9 @@ public class neuralNetwork{
                 if (training){
                     backProp(i, desiredOut[i]);
                 } else {
-                    results[i] = outVal;
+                    results[i] = normaliseSingle(outVal, "post");
+                    double[] doThis = {desiredOut[i], normaliseSingle(outVal, "post")};
+                    dotResults[i] = doThis;
                 }
 
             }
@@ -265,11 +269,26 @@ public class neuralNetwork{
         if (training){
             return(epochErrors);
         } else {
+            plotDotGraph(dotResults);
             return results;
         }
     }
 
-    public static void plotGraph(double[] errorGraph) throws IOException{
+    public static void plotDotGraph(double[][] theseVals) throws IOException{
+        new FileWriter("dotGraph.txt").close();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("dotGraph.txt"))){
+            for (double[] line: theseVals){
+                writer.write (line[0] + "," + line[1] + "\n");
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace ();
+        }
+    }
+
+    public static void plotErrorGraph(double[] errorGraph) throws IOException{
         new FileWriter("errorData.txt").close();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("errorData.txt"))){
@@ -284,19 +303,46 @@ public class neuralNetwork{
     }
 
     public static void main(String[] args) throws IOException{
-        initWeights();
-        plotGraph(feedForward(epochCount, true));
+
+        System.out.println("Would you like to: TRAIN the AI, RUN the AI, predict the next value or STOP the program");
+        Scanner userInp = new Scanner(System.in);
+        String accInp = userInp.nextLine();
+
+        while (!accInp.equalsIgnoreCase("stop")){
+
+            if (accInp.equalsIgnoreCase("train")){
+                System.out.println("How Many Epochs");
+                Scanner epochInp = new Scanner(System.in);
+                int epoch = epochInp.nextInt();
+
+                initWeights();
+                plotErrorGraph(feedForward(epoch, true));
+
+                System.out.println("Training Completed");
+            }
+
+            if (accInp.equalsIgnoreCase("run")){
+            
+                double[] thisTable = feedForward(1, false);
+
+                IntStream.iterate(1, i -> i + 1).limit(I_dim).forEach(i -> System.out.print(String.format("   Input%d    |", i)));
+                System.out.print("   Expected    |");
+                System.out.print("   Result    |");
+                System.out.println();
+                IntStream.iterate(0, i -> i + 1).limit(I_dim + 2).forEach(i -> System.out.print("--------------"));
+                System.out.println("--");
+                IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
         
-        double[] thisTable = feedForward(1, false);
+            }
 
-        IntStream.iterate(1, i -> i + 1).limit(I_dim).forEach(i -> System.out.print(String.format("   Input%d    |", i)));
-        System.out.print("   Expected    |");
-        System.out.print("   Result    |");
-        System.out.println();
-        IntStream.iterate(0, i -> i + 1).limit(I_dim + 2).forEach(i -> System.out.print("--------------"));
-        System.out.println("--");
-        IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
+            if (accInp.equalsIgnoreCase("predict")){
+                System.out.println(normaliseSingle(outVal, "post"));
+            }
 
+            System.out.println("Would you like to: TRAIN the AI, RUN the AI, predict the next value or STOP the program");
+            userInp = new Scanner(System.in);
+            accInp = userInp.nextLine().toLowerCase();
+        }
 
     }
 }
