@@ -10,15 +10,15 @@ import java.util.stream.IntStream;
 
 public class neuralNetwork{
 
-    public static int I_dim = 2;
+    public static int I_dim = 8;
     public static int H_dim = 8; //5;
     public static int O_dim = 1;
 
     public static int epochCount = 4;
     public static Double learning_param = 0.1;
 
-    public static double minVal = 0; //3.694; //Change this depending on data set
-    public static double maxVal = 1; //448.1; //Change this depending on data set
+    public static double minVal = 3.694; //0; Change this depending on data set
+    public static double maxVal = 448.1; //1; Change this depending on data set
 
     public static double[][] weightToHid = new double[H_dim][I_dim];
     public static double[] weightToOut = new double[H_dim];
@@ -32,10 +32,40 @@ public class neuralNetwork{
     public static double[] hidDelta = new double[H_dim];
 
     //XOR Testing
-    public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData(); 
-    public static double[] desiredOut = {0.0, 1.0, 1.0, 0.0}; //getDesiredData();
+    //public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData("data"); 
+    public static double[] desiredOut = getDesiredData("training"); //{0.0, 1.0, 1.0, 0.0};
 
-    public static double[][] getData(){
+    public static double[][] data = getData("training");
+    public static double[][] validation = getData("validation");
+    public static double[][] test = getData("test");
+
+    public static double[][] convertArrayList(ArrayList<String[]> theList){
+        double[][] result = new double[theList.size()][8];
+        int size = theList.size();
+        for (int i = 0; i < size; i++){
+            int size3 = theList.get(i).length;
+            double[] temp = new double[size3];
+            for (int y = 0; y < size3; y++){
+                if (theList.get(i)[y] != ""){
+                    temp[y] = Double.parseDouble(theList.get(i)[y]);
+                }
+            }
+
+            result[i] = temp;
+        }
+        return result;
+    }
+
+    public static double[] convert1DArrayList(ArrayList<String> theList){
+        double[] result = new double[theList.size()];
+        int size = theList.size();
+        for (int i = 0; i < size; i++){
+            result[i] = Double.parseDouble(theList.get(i));
+        }
+        return result;
+    }
+
+    public static double[][] getData(String option){
         //XOR
         //double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
         try {
@@ -51,23 +81,43 @@ public class neuralNetwork{
             }
 
             csvReader.close();
+            double i1 = Math.round(theData1.size() * 0.6);
+            double i2 = i1 + Math.round(theData1.size() * 0.2);
 
-            double[][] theData = new double[theData1.size()][8];
+            ArrayList<String[]> trainingSet1 = new ArrayList<String[]>();
+            ArrayList<String[]> ValidationSet1 = new ArrayList<String[]>();
+            ArrayList<String[]> TestSet1 = new ArrayList<String[]>();
 
-            int size2 = theData1.size();
-            for (int i = 0; i < size2; i++){
-                int size3 = theData1.get(i).length;
-                double[] temp = new double[size3];
-                for (int y = 0; y < size3; y++){
-                    if (theData1.get(i)[y] != ""){
-                        temp[y] = Double.parseDouble(theData1.get(i)[y]);
-                    }
+            for (int i = 0; i < theData1.size(); i++){
+                if (i < i1){
+                    trainingSet1.add(theData1.get(i));
                 }
-
-                theData[i] = temp;
+                if (i1 < i && i < i2){
+                    ValidationSet1.add(theData1.get(i));
+                }
+                if (i > i2){
+                    TestSet1.add(theData1.get(i));
+                }
             }
 
-            return theData;
+            double[][] theData = convertArrayList(theData1);
+            double[][] trainingSet = convertArrayList(trainingSet1);
+            double[][] validationSet = convertArrayList(ValidationSet1);
+            double[][] testSet = convertArrayList(TestSet1);
+
+
+            if (option.equalsIgnoreCase("data")){
+                return theData;
+            }
+            if (option.equalsIgnoreCase("training")){
+                return trainingSet;
+            }
+            if (option.equalsIgnoreCase("validation")){
+                return validationSet;
+            }
+            if (option.equalsIgnoreCase("test")){
+                return testSet;
+            }
 
 
         } catch (IOException e) {
@@ -78,7 +128,7 @@ public class neuralNetwork{
 
     }
 
-    public static double[] getDesiredData(){
+    public static double[] getDesiredData(String option){
         //XOR
         //double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
         try {
@@ -95,14 +145,34 @@ public class neuralNetwork{
 
             csvReader.close();
 
-            double[] desiredOut = new double[desiredOut1.size()];
+            ArrayList<String> trainingOut = new ArrayList<String>();
+            ArrayList<String> ValidationOut = new ArrayList<String>();
+            ArrayList<String> TestOut = new ArrayList<String>();
 
-            int size = desiredOut1.size();
-            for (int i = 0; i < size; i++){
-                desiredOut[i] = Double.parseDouble(desiredOut1.get(i));
+            double i1 = Math.round(desiredOut1.size() * 0.6);
+            double i2 = i1 + Math.round(desiredOut1.size() * 0.2);
+
+            for (int i = 0; i < desiredOut1.size(); i++){
+                if (i < i1){
+                    trainingOut.add(desiredOut1.get(i));
+                }
+                if (i1 < i && i < i2){
+                    ValidationOut.add(desiredOut1.get(i));
+                }
+                if (i > i2){
+                    TestOut.add(desiredOut1.get(i));
+                }
             }
 
-            return desiredOut;
+            if (option.equalsIgnoreCase("training")){
+                return convert1DArrayList(trainingOut);
+            }
+            if (option.equalsIgnoreCase("validation")){
+                return convert1DArrayList(ValidationOut);
+            }
+            if (option.equalsIgnoreCase("test")){
+                return convert1DArrayList(TestOut);
+            }
 
 
         } catch (IOException e) {
@@ -264,9 +334,15 @@ public class neuralNetwork{
 
             }
             epochErrors[j] = Math.pow(getOverall(errors) / data.length, 0.5);
+
+            if (epochErrors[j] < 0.005 && training){
+                System.out.println(String.format("Successfuly Trained in %d Epochs", j));
+                return(epochErrors);
+            }
         } 
 
         if (training){
+            System.out.println(String.format("Epoch Amount Hit Current Error: %f", epochErrors[epochErrors.length-1]));
             return(epochErrors);
         } else {
             plotDotGraph(dotResults);
@@ -311,11 +387,11 @@ public class neuralNetwork{
         while (!accInp.equalsIgnoreCase("stop")){
 
             if (accInp.equalsIgnoreCase("train")){
+                initWeights();
                 System.out.println("How Many Epochs");
                 Scanner epochInp = new Scanner(System.in);
                 int epoch = epochInp.nextInt();
 
-                initWeights();
                 plotErrorGraph(feedForward(epoch, true));
 
                 System.out.println("Training Completed");
@@ -331,7 +407,8 @@ public class neuralNetwork{
                 System.out.println();
                 IntStream.iterate(0, i -> i + 1).limit(I_dim + 2).forEach(i -> System.out.print("--------------"));
                 System.out.println("--");
-                IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
+                IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], desiredOut[i], thisTable[i])));
+                //XOR IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
         
             }
 
