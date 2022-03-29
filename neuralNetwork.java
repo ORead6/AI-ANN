@@ -92,10 +92,10 @@ public class neuralNetwork{
                 if (i < i1){
                     trainingSet1.add(theData1.get(i));
                 }
-                if (i1 < i && i < i2){
+                if (i1 <= i && i < i2){
                     ValidationSet1.add(theData1.get(i));
                 }
-                if (i > i2){
+                if (i >= i2){
                     TestSet1.add(theData1.get(i));
                 }
             }
@@ -135,7 +135,7 @@ public class neuralNetwork{
             while ((row = csvReader.readLine()) != null) {
                 if (x > 1){
                     String[] data = row.split(",");
-                    desiredOut1.add(data[3]);
+                    desiredOut1.add(data[4]);
                 } else {x++;}
             }
 
@@ -152,10 +152,10 @@ public class neuralNetwork{
                 if (i < i1){
                     trainingOut.add(desiredOut1.get(i));
                 }
-                if (i1 < i && i < i2){
+                if (i1 <= i && i < i2){
                     ValidationOut.add(desiredOut1.get(i));
                 }
-                if (i > i2){
+                if (i >= i2){
                     TestOut.add(desiredOut1.get(i));
                 }
             }
@@ -392,7 +392,15 @@ public class neuralNetwork{
     }
 
     public static void main(String[] args) throws IOException{
-        ArrayList<Double> errorResults = new ArrayList<Double>();
+        double[][] test = getData("training");
+        double[] testOut = getDesiredData("training");
+
+        for (int i = 0; i < 1; i++){
+            String temp = String.format("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", test[i][0], test[i][1], test[i][2], test[i][3], test[i][4], test[i][5], test[i][6], test[i][7], testOut[i]);
+            System.out.println(temp);
+        }
+
+        /*ArrayList<Double> errorResults = new ArrayList<Double>();
 
         System.out.println("Would you like to: TRAIN the AI, RUN the AI, predict the next value or STOP the program");
         Scanner userInp = new Scanner(System.in);
@@ -406,7 +414,7 @@ public class neuralNetwork{
                 Scanner epochInp = new Scanner(System.in);
                 int epoch = epochInp.nextInt();
 
-                double[] tempVal = feedForward(epoch, true, getData("training"), getDesiredData("training"), 0.05);
+                double[] tempVal = feedForward(epoch, true, getData("training"), getDesiredData("training"), 0.005);
 
                 IntStream.iterate(0, i -> i + 1).limit(tempVal.length-1).forEach(i -> errorResults.add(tempVal[i]));
 
@@ -448,7 +456,7 @@ public class neuralNetwork{
             }
 
             if (accInp.equalsIgnoreCase("predict")){
-                feedForward(1, true, getData("test"), getDesiredData("test"), 0.005);
+                feedForward(1, false, getData("test"), getDesiredData("test"), 0.005);
                 System.out.println(normaliseSingle(outVal, "post"));
             }
 
@@ -456,6 +464,6 @@ public class neuralNetwork{
             userInp = new Scanner(System.in);
             accInp = userInp.nextLine().toLowerCase();
         }
-        plotErrorGraph(errorResults);
+        plotErrorGraph(errorResults);*/
     }
 }
