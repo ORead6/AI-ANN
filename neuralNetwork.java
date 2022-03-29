@@ -100,15 +100,11 @@ public class neuralNetwork{
                 }
             }
 
-            double[][] theData = convertArrayList(theData1);
             double[][] trainingSet = convertArrayList(trainingSet1);
             double[][] validationSet = convertArrayList(ValidationSet1);
             double[][] testSet = convertArrayList(TestSet1);
 
 
-            if (option.equalsIgnoreCase("data")){
-                return theData;
-            }
             if (option.equalsIgnoreCase("training")){
                 return trainingSet;
             }
@@ -272,9 +268,9 @@ public class neuralNetwork{
         return sum;
     }
 
-    public static void backProp(int dataIndex, double observed){
+    public static void backProp(int dataIndex, double observed, double[][] thisData){
         double desiredOutVal = normaliseSingle(observed, "pre");
-        double[] inpVal = data[dataIndex];
+        double[] inpVal = thisData[dataIndex];
         
         for (int i = 0; i < O_dim; i++){
             outDelta[i] = (desiredOutVal - outVal) * derivative(outVal);
@@ -295,15 +291,15 @@ public class neuralNetwork{
         return (x * (1 - x));
     }
 
-    public static double[] feedForward(int epochs, boolean training) throws IOException{
+    public static double[] feedForward(int epochs, boolean training, double[][] useThisData, double[] useTheseOutputs, double breakCase) throws IOException{
         double[] epochErrors = new double[epochs];
-        double[] results = new double[data.length];
-        double[][] dotResults = new double[data.length][2];
+        double[] results = new double[useThisData.length+1];
+        double[][] trainingData = getData("training");
         for (int j = 0; j < epochs; j++){
-            double[] errors = new double[data.length];
+            double[] errors = new double[useThisData.length];
 
-            for (int i = 0; i < data.length; i++){
-                double[] thisPass = data[i];
+            for (int i = 0; i < useThisData.length; i++){
+                double[] thisPass = useThisData[i];
                 for (int x = 0; x < H_dim; x++){
                     double[] weights = weightToHid[x];
 
@@ -317,25 +313,23 @@ public class neuralNetwork{
                     double wS = wSum(weightToOut, hidVals) + (outSelfWeight[x] * outVal);
                     outVal = activation(wS);
 
-                    double error = errorFunc(outVal, normaliseSingle(desiredOut[i], "pre"));
+                    double error = errorFunc(outVal, normaliseSingle(useTheseOutputs[i], "pre"));
                     
-                    //String results = String.format("Expected: %f             Got: %f", normaliseSingle(desiredOut[i], "pre"), outVal);
+                    //String results = String.format("Expected: %f             Got: %f", normaliseSingle(useTheseOutputs[i], "pre"), outVal);
                     //System.out.println(results);
                     errors[i] = error;
                 }
 
                 if (training){
-                    backProp(i, desiredOut[i]);
+                    backProp(i, useTheseOutputs[i], trainingData);
                 } else {
                     results[i] = normaliseSingle(outVal, "post");
-                    double[] doThis = {desiredOut[i], normaliseSingle(outVal, "post")};
-                    dotResults[i] = doThis;
                 }
 
             }
-            epochErrors[j] = Math.pow(getOverall(errors) / data.length, 0.5);
+            epochErrors[j] = Math.pow(getOverall(errors) / useThisData.length, 0.5);
 
-            if (epochErrors[j] < 0.005 && training){
+            if (epochErrors[j] < breakCase && training){
                 System.out.println(String.format("Successfuly Trained in %d Epochs", j));
                 return(epochErrors);
             }
@@ -345,7 +339,6 @@ public class neuralNetwork{
             System.out.println(String.format("Epoch Amount Hit Current Error: %f", epochErrors[epochErrors.length-1]));
             return(epochErrors);
         } else {
-            plotDotGraph(dotResults);
             return results;
         }
     }
@@ -364,11 +357,11 @@ public class neuralNetwork{
         }
     }
 
-    public static void plotErrorGraph(double[] errorGraph) throws IOException{
+    public static void plotErrorGraph(ArrayList<Double> errorResults) throws IOException{
         new FileWriter("errorData.txt").close();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("errorData.txt"))){
-            for (double line: errorGraph){
+            for (double line: errorResults){
                 writer.write (line + "\n");
             }
 
@@ -378,7 +371,28 @@ public class neuralNetwork{
         }
     }
 
+    public static double getAccuracy(double[] thisTable, double[] desired) {
+        int size = thisTable.length-1;
+        double sum = 0.0;
+        double measuredSum = 0.0;
+        double percentage = 0.0;
+        for (int i = 0; i < size; i++){
+            double deviance = Math.pow(thisTable[i] - desired[i], 2);
+            measuredSum += thisTable[i];
+            sum += deviance;
+        }
+        
+        double sD = Math.pow(sum / size-1, 0.5);
+        double xBar = measuredSum / size;
+
+        percentage = 100 - ((sD / xBar) * 100);
+
+
+        return percentage;
+    }
+
     public static void main(String[] args) throws IOException{
+        ArrayList<Double> errorResults = new ArrayList<Double>();
 
         System.out.println("Would you like to: TRAIN the AI, RUN the AI, predict the next value or STOP the program");
         Scanner userInp = new Scanner(System.in);
@@ -392,14 +406,20 @@ public class neuralNetwork{
                 Scanner epochInp = new Scanner(System.in);
                 int epoch = epochInp.nextInt();
 
-                plotErrorGraph(feedForward(epoch, true));
+                double[] tempVal = feedForward(epoch, true, getData("training"), getDesiredData("training"), 0.05);
+
+                IntStream.iterate(0, i -> i + 1).limit(tempVal.length-1).forEach(i -> errorResults.add(tempVal[i]));
 
                 System.out.println("Training Completed");
             }
 
             if (accInp.equalsIgnoreCase("run")){
+
+                double[][] validation = getData("validation");
+                double[] desired = getDesiredData("Validation");
             
-                double[] thisTable = feedForward(1, false);
+                double[] thisTable = feedForward(1, false, validation, desired, 0.05);
+
 
                 IntStream.iterate(1, i -> i + 1).limit(I_dim).forEach(i -> System.out.print(String.format("   Input%d    |", i)));
                 System.out.print("   Expected    |");
@@ -407,12 +427,28 @@ public class neuralNetwork{
                 System.out.println();
                 IntStream.iterate(0, i -> i + 1).limit(I_dim + 2).forEach(i -> System.out.print("--------------"));
                 System.out.println("--");
-                IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], desiredOut[i], thisTable[i])));
+                IntStream.iterate(0, i -> i + 1).limit(validation.length-1).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], data[i][2], data[i][3], data[i][4], data[i][5], data[i][6], data[i][7], desired[i], thisTable[i])));
                 //XOR IntStream.iterate(0, i -> i + 1).limit(data.length).forEach(i -> System.out.println(String.format("   %.1f   |   %.1f   |   %.6f   |   %.6f   |", data[i][0], data[i][1], desiredOut[i], thisTable[i])));
-        
+                
+                double accuracy = getAccuracy(thisTable, desired);
+
+                System.out.println(String.format("The accuracy of the model is %.2f%s", accuracy, "%"));
+
+                System.out.println("Would you like to continue training until a new error threshold is met (1st run is 0.05). If so please enter a value or type no to cancel: ");
+                Scanner errorVal = new Scanner(System.in);
+                String accErrorVal = errorVal.nextLine();
+
+                if (!accErrorVal.equalsIgnoreCase("no")){
+                    System.out.println("Please enter epoch count");
+                    Scanner epochInp = new Scanner(System.in);
+                    int accEpochInp = Integer.parseInt(epochInp.nextLine());
+                    double[] tempVal = feedForward(accEpochInp, true, getData("training"), getDesiredData("training"), Double.parseDouble(accErrorVal));
+                    IntStream.iterate(0, i -> i + 1).limit(tempVal.length-1).forEach(i -> errorResults.add(tempVal[i]));
+                }
             }
 
             if (accInp.equalsIgnoreCase("predict")){
+                feedForward(1, true, getData("test"), getDesiredData("test"), 0.005);
                 System.out.println(normaliseSingle(outVal, "post"));
             }
 
@@ -420,6 +456,6 @@ public class neuralNetwork{
             userInp = new Scanner(System.in);
             accInp = userInp.nextLine().toLowerCase();
         }
-
+        plotErrorGraph(errorResults);
     }
 }
