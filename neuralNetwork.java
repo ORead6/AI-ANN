@@ -10,6 +10,8 @@ import java.util.stream.IntStream;
 
 public class neuralNetwork{
 
+    // Initialising Variables
+
     public static int I_dim = 8;
     public static int H_dim = 8; //5;
     public static int O_dim = 1;
@@ -42,6 +44,8 @@ public class neuralNetwork{
     public static double[][] validation = getData("validation");
     public static double[][] test = getData("test");
 
+    // Used to convert 2D ArrayLists into 2D Double
+
     public static double[][] convertArrayList(ArrayList<String[]> theList){
         double[][] result = new double[theList.size()][8];
         int size = theList.size();
@@ -59,6 +63,8 @@ public class neuralNetwork{
         return result;
     }
 
+    //Used to convert 1D ArrayLists into 1D Double Lists
+
     public static double[] convert1DArrayList(ArrayList<String> theList){
         double[] result = new double[theList.size()];
         int size = theList.size();
@@ -67,6 +73,8 @@ public class neuralNetwork{
         }
         return result;
     }
+
+    //Reads data from csv and puts into array for later use
 
     public static double[][] getData(String option){
         //XOR
@@ -130,6 +138,7 @@ public class neuralNetwork{
 
     }
 
+    //Reads data from csv and puts into array for later use
     public static double[] getDesiredData(String option){
         //XOR
         //double[][] theData = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
@@ -190,6 +199,8 @@ public class neuralNetwork{
     //public static double[][] data = getData();
     //public static double[] desiredOut = getDesiredData();
 
+    //Initialises Weight values at first run
+
     public static void initWeights(){
         int max = 1;
         int min = -1;
@@ -211,6 +222,8 @@ public class neuralNetwork{
         outDelta[0] = 0.0;
     }
 
+    // stadardises data between 0-1 range
+    // Can also de standardise (In ARRAYS)
     public static double[] normaliseData(double[] data, String thisCase){
 
         if (thisCase == "pre"){
@@ -232,6 +245,9 @@ public class neuralNetwork{
 
         
     }
+    
+    // stadardises data between 0-1 range
+    // Can also de standardise (In ARRAYS)
 
     public static double normaliseSingle(double data, String thisCase){
 
@@ -247,6 +263,7 @@ public class neuralNetwork{
         }
     }
 
+    // Calculates weighted sum of 2 arrays
     public static double wSum(double[] m1, double[] m2){
         double sum = 0.0;
         int size = m1.length;
@@ -257,16 +274,19 @@ public class neuralNetwork{
         return sum;
     }
 
+    // Calculates our error value
     public static double errorFunc(double predicted, double real){
         return Math.pow((predicted - real), 2);
     }
 
+    // Activation function (Sigmoid)
     public static double activation(double x){
         //Sigmoid
         double result = 1 / (1 + Math.exp(-x));
         return result;
     }
 
+    // Gets sum of an array
     public static double getOverall(double [] thisData){
         double sum = 0.0;
         int size = thisData.length;
@@ -276,6 +296,7 @@ public class neuralNetwork{
         return sum;
     }
 
+    // Gets omega value for weight decay
     public static double getOmega(){
         int totalWeights = (H_dim * O_dim) + (H_dim * I_dim) + H_dim + O_dim;
         double weightSquared = 0.0;
@@ -289,13 +310,16 @@ public class neuralNetwork{
         
     }
 
+    // Back prop algorithm
     public static void backProp(int dataIndex, double observed, double[][] thisData, int currentEpoch){
+        // Values needed
         double desiredOutVal = normaliseSingle(observed, "pre");
         double[] inpVal = thisData[dataIndex];
         double upsilon = 1 / (learning_param * currentEpoch+1);
         double omega = getOmega();
         double upsilonOmega = upsilon * omega;
         
+        // Calculates delta values and weight changes
         for (int i = 0; i < O_dim; i++){
             outDelta[i] = (desiredOutVal - outVal + upsilonOmega) * derivative(outVal);
             outBias += (learning_param * outDelta[i]);
@@ -311,9 +335,12 @@ public class neuralNetwork{
 
     }
 
+    // Derivative of sigmoid
     private static double derivative(double x) {
         return (x * (1 - x));
     }
+
+    //Feed forward algorithm
 
     public static double[] feedForward(int epochs, boolean training, double[][] useThisData, double[] useTheseOutputs, double breakCase) throws IOException{
         double[] epochErrors = new double[epochs];
@@ -369,6 +396,7 @@ public class neuralNetwork{
         }
     }
 
+    // Writes values to txt file for graph plotting
     public static void plotErrorGraph(ArrayList<Double> errorResults) throws IOException{
         new FileWriter("errorData.txt").close();
 
@@ -383,6 +411,7 @@ public class neuralNetwork{
         }
     }
 
+    // Writes values to txt file for graph plotting
     public static void plotDot(ArrayList<Double> expected, ArrayList<Double> got) throws IOException{
         new FileWriter("dotGraph.txt").close();
 
@@ -397,6 +426,7 @@ public class neuralNetwork{
         }
     }
 
+    // Gets accuracy of the current model
     public static double getAccuracy(double[] thisTable, double[] desired) {
         double sum = 0.0;
 
@@ -410,6 +440,7 @@ public class neuralNetwork{
 
     }
 
+    // Creates user UI and runs code in correct Order
     public static void main(String[] args) throws IOException{
 
         /*
