@@ -31,6 +31,9 @@ public class neuralNetwork{
     public static double[] outDelta = new double[O_dim];
     public static double[] hidDelta = new double[H_dim];
 
+    public static ArrayList<Double> dotExpected = new ArrayList<Double>();
+    public static ArrayList<Double> dotGot = new ArrayList<Double>();
+
     //XOR Testing
     //public static double[][] data = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}}; //getData("data"); 
     public static double[] desiredOut = getDesiredData("training"); //{0.0, 1.0, 1.0, 0.0};
@@ -80,6 +83,8 @@ public class neuralNetwork{
                 } else {x++;}
             }
 
+            theData1.remove(theData1.size() - 1);
+
             csvReader.close();
             double i1 = Math.round(theData1.size() * 0.6);
             double i2 = i1 + Math.round(theData1.size() * 0.2);
@@ -116,6 +121,7 @@ public class neuralNetwork{
             }
 
 
+
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -138,6 +144,8 @@ public class neuralNetwork{
                     desiredOut1.add(data[4]);
                 } else {x++;}
             }
+
+            desiredOut1.remove(0);
 
             csvReader.close();
 
@@ -268,12 +276,28 @@ public class neuralNetwork{
         return sum;
     }
 
-    public static void backProp(int dataIndex, double observed, double[][] thisData){
+    public static double getOmega(){
+        int totalWeights = (H_dim * O_dim) + (H_dim * I_dim) + H_dim + O_dim;
+        double weightSquared = 0.0;
+        for (int i = 0; i < H_dim; i++){
+            weightSquared += Math.pow(weightToOut[i], 2);
+            for (int j = 0; j < I_dim; j++){
+                weightSquared += Math.pow(weightToHid[i][j], 2);
+            }
+        }
+        return weightSquared / (2 * totalWeights);
+        
+    }
+
+    public static void backProp(int dataIndex, double observed, double[][] thisData, int currentEpoch){
         double desiredOutVal = normaliseSingle(observed, "pre");
         double[] inpVal = thisData[dataIndex];
+        double upsilon = 1 / (learning_param * currentEpoch+1);
+        double omega = getOmega();
+        double upsilonOmega = upsilon * omega;
         
         for (int i = 0; i < O_dim; i++){
-            outDelta[i] = (desiredOutVal - outVal) * derivative(outVal);
+            outDelta[i] = (desiredOutVal - outVal + upsilonOmega) * derivative(outVal);
             outBias += (learning_param * outDelta[i]);
             for (int x = 0; x < H_dim; x++){
                 weightToOut[x] += (learning_param * outDelta[i] * hidVals[x]);
@@ -321,9 +345,11 @@ public class neuralNetwork{
                 }
 
                 if (training){
-                    backProp(i, useTheseOutputs[i], trainingData);
+                    backProp(i, useTheseOutputs[i], trainingData, j);
                 } else {
                     results[i] = normaliseSingle(outVal, "post");
+                    dotGot.add(normaliseSingle(outVal, "post"));
+                    dotExpected.add(useTheseOutputs[i]);
                 }
 
             }
@@ -343,20 +369,6 @@ public class neuralNetwork{
         }
     }
 
-    public static void plotDotGraph(double[][] theseVals) throws IOException{
-        new FileWriter("dotGraph.txt").close();
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("dotGraph.txt"))){
-            for (double[] line: theseVals){
-                writer.write (line[0] + "," + line[1] + "\n");
-            }
-
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace ();
-        }
-    }
-
     public static void plotErrorGraph(ArrayList<Double> errorResults) throws IOException{
         new FileWriter("errorData.txt").close();
 
@@ -371,36 +383,46 @@ public class neuralNetwork{
         }
     }
 
-    public static double getAccuracy(double[] thisTable, double[] desired) {
-        int size = thisTable.length-1;
-        double sum = 0.0;
-        double measuredSum = 0.0;
-        double percentage = 0.0;
-        for (int i = 0; i < size; i++){
-            double deviance = Math.pow(thisTable[i] - desired[i], 2);
-            measuredSum += thisTable[i];
-            sum += deviance;
+    public static void plotDot(ArrayList<Double> expected, ArrayList<Double> got) throws IOException{
+        new FileWriter("dotGraph.txt").close();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("dotGraph.txt"))){
+            for (int i = 0; i < expected.size(); i++){
+                writer.write(String.format("%f,%f\n", expected.get(i), got.get(i)));
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace ();
         }
-        
-        double sD = Math.pow(sum / size-1, 0.5);
-        double xBar = measuredSum / size;
+    }
 
-        percentage = 100 - ((sD / xBar) * 100);
+    public static double getAccuracy(double[] thisTable, double[] desired) {
+        double sum = 0.0;
 
+        for (int i = 0; i < thisTable.length - 1; i++){
+            double top = (Math.abs(desired[i] - thisTable[i]) / desired[i]) * 100;
+            sum += top;
+        }
+        double percent = 100 - (sum / thisTable.length - 1);
 
-        return percentage;
+        return percent;
+
     }
 
     public static void main(String[] args) throws IOException{
-        double[][] test = getData("training");
-        double[] testOut = getDesiredData("training");
 
-        for (int i = 0; i < 1; i++){
-            String temp = String.format("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", test[i][0], test[i][1], test[i][2], test[i][3], test[i][4], test[i][5], test[i][6], test[i][7], testOut[i]);
-            System.out.println(temp);
-        }
+        /*
+        double[][] theData = getData("validation");
+        double[] theResults = getDesiredData("validation");
 
-        /*ArrayList<Double> errorResults = new ArrayList<Double>();
+        for (int i = 0; i < theData.length; i++){
+            System.out.println(String.format("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", theData[i][0], theData[i][1], theData[i][2], theData[i][3], theData[i][4], theData[i][5], theData[i][6], theData[i][7], theResults[i]));
+        }*/
+
+        
+
+        ArrayList<Double> errorResults = new ArrayList<Double>();
 
         System.out.println("Would you like to: TRAIN the AI, RUN the AI, predict the next value or STOP the program");
         Scanner userInp = new Scanner(System.in);
@@ -464,6 +486,7 @@ public class neuralNetwork{
             userInp = new Scanner(System.in);
             accInp = userInp.nextLine().toLowerCase();
         }
-        plotErrorGraph(errorResults);*/
-    }
+        plotErrorGraph(errorResults);
+        plotDot(dotExpected, dotGot);
+    } 
 }
